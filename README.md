@@ -51,22 +51,29 @@ git clone https://github.com/machala112/Flow.git
 cd Flow
 python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-# OpenVoice is installed from source — see "Model setup" below
+```
+
+### Install OpenVoice (from source — no PyPI release)
+
+```bash
+git clone https://github.com/myshell-ai/OpenVoice.git
+cd OpenVoice
+# Python 3.10/3.11: pip install -e .
+# Python 3.12: setup.py is broken (pkgutil.ImpImporter removed); instead
+# add the checkout to PYTHONPATH when running CharacterLock:
+export PYTHONPATH="$PWD:$PYTHONPATH"
 ```
 
 ### Model setup
 
-Model weights live in `models/` (gitignored) and download on first run:
+Model weights download on first run to `~/.characterlock/models/`:
 
-| Model | Purpose | Approx. size |
-|---|---|---|
-| InsightFace `buffalo_l` | face detection + embedding | ~300 MB |
-| `inswapper_128.onnx` | identity correction (face swap) | ~550 MB |
-| GFPGAN v1.4 | face restoration / blending | ~350 MB |
-| OpenVoice V2 checkpoints | voice conversion | ~1 GB |
-
-*(Exact versions, URLs and licences are pinned in `requirements.txt` once the
-model research lands.)*
+| Model | Purpose | Approx. size | Location |
+|---|---|---|---|
+| InsightFace `buffalo_l` | face detection + embedding | ~300 MB | `~/.insightface/models/` |
+| `inswapper_128.onnx` | identity correction (face swap) | ~550 MB | `~/.insightface/models/` |
+| GFPGAN v1.4 | face restoration / blending | ~350 MB | `~/.characterlock/models/gfpgan/` |
+| OpenVoice V2 converter | voice conversion | ~130 MB | `~/.characterlock/models/openvoice_v2/` |
 
 ## Usage
 
@@ -79,6 +86,9 @@ characterlock process --project myshow --input ./raw_clips/ --output ./final/
 
 # ...or stitch everything into one final video
 characterlock process --project myshow --input ./raw_clips/ --output ./final/ --stitch
+
+# ...or skip GFPGAN restoration for speed (more swap artifacts)
+characterlock process --project myshow --input ./raw_clips/ --output ./final/ --no-restore
 ```
 
 ## Project layout
@@ -89,6 +99,23 @@ myshow/
   identity.npz          # canonical face embedding
   voice_embedding.npy   # speaker embedding
 ```
+
+## Verified
+
+End-to-end runs on 2026-09-26 (Python 3.12, CPU, ffmpeg 8.1.2):
+
+- **Face**: 3 s test clip (512×512, 25 fps, 75 frames) — all 75/75 frames
+  swapped; sampled frame similarity to canonical identity 0.85–0.86
+  (vs 0.01 to the original face, −0.03 between the two identities);
+  audio track preserved.
+- **Voice**: same clip re-voiced toward a 19 s reference sample —
+  speaker-embedding cosine(output, target) 0.88, cosine(output, source) 0.05
+  (target vs source 0.11); duration, frame count and audio track preserved.
+- **Restore**: GFPGAN v1.4 verified on a swapped frame (output differs from
+  input; faces detected and enhanced).
+- **CLI**: `init` + `process` (with `--no-restore`) verified on the test clip:
+  face sim 0.89, voice cos 0.89.
+- **Tests**: 8/8 pytest pass.
 
 ## Model licences
 

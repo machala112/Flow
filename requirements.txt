@@ -1,21 +1,51 @@
-# CharacterLock — pinned working versions
-# NOTE: versions below are finalised once the model research lands.
-# System dependency (not pip): ffmpeg + ffprobe  (see README).
+# CharacterLock — pinned working versions (verified 2026-09-26, Python 3.12, CPU).
+# System dependency (not pip): ffmpeg + ffprobe 8.x (see README).
+#
+# NOTE on basicsr: GFPGAN depends on basicsr, whose 1.4.2 release imports
+# `torchvision.transforms.functional_tensor`, removed in modern torchvision.
+# If `import gfpgan` fails with ModuleNotFoundError for functional_tensor,
+# patch the installed basicsr: in basicsr/data/degradations.py (and any
+# other file importing it), replace
+#   `import torchvision.transforms.functional_tensor as F_t`
+# with
+#   `import torchvision.transforms.functional as F_t`
+# (the names used — rgb_to_grayscale etc. — exist in both).
+#
+# NOTE on Python version: OpenVoice's setup.py uses pkgutil.ImpImporter,
+# removed in Python 3.12, so `pip install -e .` fails on 3.12. Either use
+# Python 3.10/3.11, or add the cloned OpenVoice repo to PYTHONPATH (see README).
 
-numpy
+numpy==2.5.3
 Pillow
 tqdm
+pytest==9.1.1
+
+# --- Torch (CPU wheels shown; use CUDA wheels for GPU) ---
+torch==2.14.0+cpu
+torchvision==0.29.0+cpu
+torchaudio==2.11.0
 
 # --- Face: detection / embedding / swap (InsightFace + onnxruntime) ---
-insightface
-onnxruntime
+insightface==2.0
+onnxruntime==1.30.0
+opencv-python==5.0.0.93
 
-# --- Face restoration ---
-gfpgan
+# --- Face restoration (GFPGAN pulls basicsr + facexlib) ---
+gfpgan==1.3.8
+facexlib==0.3.0
+basicsr==1.4.2  # see patch note above
 
 # --- Voice conversion (OpenVoice V2, MyShell) ---
-# Installed from source (no PyPI release); see README for steps.
-# openvoice @ git+https://github.com/myshell-ai/OpenVoice.git
-
-# --- Dev / test ---
-pytest
+# No PyPI release; install from source (see README "Model setup").
+# Requires: librosa, soundfile, eng_to_ipa, inflect, unidecode,
+#           pypinyin, jieba, cn2an, pydub, wavmark
+librosa==1.0.0
+soundfile
+eng_to_ipa
+inflect
+unidecode
+pypinyin
+jieba
+cn2an
+pydub
+wavmark
