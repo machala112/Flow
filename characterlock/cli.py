@@ -35,19 +35,62 @@ def cmd_init(args):
 
 def cmd_process(args):
     """Correct a folder of clips against a registered project."""
+    import os
     from characterlock.pipeline import project as project_mod
     from characterlock.pipeline import video_io
+    from characterlock.identity import face_extract, face_correct
+    from characterlock.voice import voice_extract, voice_correct
 
     proj = project_mod.load_project(args.project)
+    identity = face_extract.load_identity(proj["path"])
+    voice_emb = voice_extract.load_voice_embedding(proj["path"])
+
     clips = video_io.list_clips(args.input)
     if not clips:
         print(f"no video clips found in {args.input}", file=sys.stderr)
         return 1
+    os.makedirs(args.output, exist_ok=True)
     print(f"{len(clips)} clip(s) -> {args.output} "
           f"{'(stitched)' if args.stitch else '(separate files)'}")
-    # The per-clip face/voice pipeline is wired up in later commits.
-    print("pipeline not yet implemented (skeleton).", file=sys.stderr)
-    return 2
+
+    def progress(*args):
+        # face module: progress(i, n, stage); voice module: progress(message)
+        if len(args) == 3:
+            i, n, stage = args
+            print(f"  [{stage}] {i}/{n}", end="\r", flush=True)
+        else:
+            print(f"  {args[0]}", flush=True)
+
+    corrected = []
+    for clip in clips:
+        name = os.path.splitext(os.path.basename(clip))[0]
+        out_path = os.path.join(args.output, f"{name}_fixed.mp4")
+        print(f"processing {os.path.basename(clip)}...")
+
+        # 1. face correction (swap + GFPGAN restore), keeps original audio
+        face_out = face_correct.correct_clip_faces(
+            clip, identity, out_path + ".face.mp4",
+            restore=not args.no_restore, progress=progress)
+        print()
+
+        # 2. voice correction (replaces audio with target voice)
+        info = video_io.probe(face_out)
+        if info["has_audio"]:
+            voice_correct.correct_clip_voice(
+                face_out, voice_emb, out_path, progress=progress)
+            print()
+            os.unlink(face_out)
+        else:
+            os.rename(face_out, out_path)
+            print("  (no audio track; voice pass skipped)")
+        corrected.append(out_path)
+        print(f"  -> {out_path}")
+
+    if args.stitch and len(corrected) > 1:
+        stitched = os.path.join(args.output, "stitched.mp4")
+        video_io.concat_videos(corrected, stitched)
+        print(f"stitched {len(corrected)} clips -> {stitched}")
+    return 0
 
 
 def build_parser():
@@ -72,6 +115,8 @@ def build_parser():
     pp.add_argument("--output", required=True, help="folder for corrected clips")
     pp.add_argument("--stitch", action="store_true",
                     help="concatenate corrected clips into one video")
+    pp.add_argument("--no-restore", action="store_true",
+                    help="skip GFPGAN face restoration (faster, more artifacts)")
     pp.set_defaults(func=cmd_process)
     return p
 

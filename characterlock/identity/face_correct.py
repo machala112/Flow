@@ -50,7 +50,7 @@ def correct_frame(img_bgr, app, swapper, source_face, restorer=None,
     for target in faces:
         img_bgr = swapper.get(img_bgr, target, source_face, paste_back=True)
     if restorer is not None:
-        img_bgr = restore_mod.restore_frame(img_bgr, restorer,
+        img_bgr = restore_mod.restore_frame(restorer, img_bgr,
                                             weight=restore_weight)
     return img_bgr
 
