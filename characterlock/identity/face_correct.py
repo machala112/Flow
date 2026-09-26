@@ -25,12 +25,14 @@ from characterlock.pipeline import video_io
 def source_face_for(embedding):
     """Build the Face-like object inswapper needs as the identity source.
 
-    inswapper.get() only reads ``source_face.normed_embedding``, so a
-    lightweight Face carrying the canonical embedding is enough.
+    inswapper.get() only reads ``source_face.normed_embedding``; in
+    InsightFace 2.0 that is a read-only property derived from
+    ``embedding``, so we set ``embedding`` (already L2-normalized by
+    extract_identity) and let the property compute.
     """
     from insightface.app.common import Face
     face = Face()
-    face["normed_embedding"] = np.asarray(embedding, dtype=np.float32)
+    face["embedding"] = np.asarray(embedding, dtype=np.float32)
     return face
 
 

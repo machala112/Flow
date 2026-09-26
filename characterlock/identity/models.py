@@ -21,8 +21,8 @@ INSWAPPER_SHA256 = (
 INSWAPPER_URLS = [
     "https://huggingface.co/ezioruan/inswapper_128.onnx/resolve/main/"
     "inswapper_128.onnx",
-    "https://github.com/facefusion/facefusion-assets/releases/download/"
-    "models/inswapper_128.onnx",
+    "https://huggingface.co/thebiglaskowski/inswapper_128.onnx/resolve/main/"
+    "inswapper_128.onnx",
     "https://huggingface.co/datasets/Gourieff/ReActor/resolve/main/models/"
     "inswapper_128.onnx",
 ]
@@ -91,7 +91,6 @@ def get_swapper():
     """Load the inswapper model via InsightFace's model zoo."""
     import insightface
     path = ensure_inswapper()
-    # ensure_inswapper() places the file exactly where model_zoo resolves
-    # bare model names (~/.insightface/models/).
-    assert os.path.dirname(path) == models_dir()
-    return insightface.model_zoo.get_model(INSWAPPER_NAME)
+    # InsightFace 2.0 treats a name ending in .onnx as a literal file path
+    # (it does not join it with the model root), so pass the absolute path.
+    return insightface.model_zoo.get_model(path)
