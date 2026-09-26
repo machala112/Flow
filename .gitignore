@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+
+# Model weights — downloaded on first run, never committed
+models/
+*.onnx
+*.pth
+*.ckpt
+*.pt
+!tests/data/**
+
+# Project data (user's own identity/voice data)
+*.npz
+*.npy
+!tests/data/**
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test / build artefacts
+.pytest_cache/
+build/
+dist/

@@ -1,0 +1,21 @@
+# CharacterLock — pinned working versions
+# NOTE: versions below are finalised once the model research lands.
+# System dependency (not pip): ffmpeg + ffprobe  (see README).
+
+numpy
+Pillow
+tqdm
+
+# --- Face: detection / embedding / swap (InsightFace + onnxruntime) ---
+insightface
+onnxruntime
+
+# --- Face restoration ---
+gfpgan
+
+# --- Voice conversion (OpenVoice V2, MyShell) ---
+# Installed from source (no PyPI release); see README for steps.
+# openvoice @ git+https://github.com/myshell-ai/OpenVoice.git
+
+# --- Dev / test ---
+pytest
