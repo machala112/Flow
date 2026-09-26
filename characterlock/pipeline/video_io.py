@@ -91,6 +91,7 @@ def assemble_video(frames_dir, out_path, fps):
 def mux_audio(video_path, audio_path, out_path):
     """Mux an audio file onto a video (replaces any existing audio)."""
     _run(["ffmpeg", "-y", "-v", "error", "-i", video_path, "-i", audio_path,
+          "-map", "0:v:0", "-map", "1:a:0",
           "-c:v", "copy", "-c:a", "aac", "-b:a", "192k",
           "-shortest", out_path])
     return out_path
